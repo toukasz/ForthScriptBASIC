@@ -32,6 +32,8 @@
 : 0< -if drop 0 -> then drop -1 ;           ( n -- f )
 : 0= if -> then drop -1 ;                   ( n -- f )
 : 0> negate -if drop 0 -> then drop -1 ;    ( n -- f )
+: true   0 ;                                ( -- f )
+: false -1 ;                                ( -- f )
 
 ( ARITHMETIC AND LOGICAL )
 : -      inv + 1 + ;                                        ( n1 n2 -- diff )
@@ -55,6 +57,7 @@
 ( : mod a! !< dup >r a - -if drop r> -> then r> drop <- ; )
 
 ( MEMORY )
+: r@    r> r> dup >r swap >r ;                              ( -- n )
 : !-    ! a -1 + a! ;                                       ( n -- )
 : @-    @ a -1 + a! ;                                       ( -- n )
 : ?     @ . ;                                               ( -- )
@@ -76,9 +79,9 @@
 : page   0 b! 0 !b ;                        ( -- )
 : type   if drop -> then 1- @+ emit <- ;    ( u -- )
 : .r     0 b! for 160 !b next . ;           ( n u -- )
-: .s     10 a!  8 for !+ next !
-         8 for @- . next @ .
-         19 a!  8 for @- next @ ;           ( -- )
+: .s     16373 a! 8 for !+ next !
+                  8 for @- . next @ .
+         16382 a! 8 for @- next @ ;         ( -- )
 
 ( COLORS )
 : black         0 ;  ( -- n )
@@ -100,22 +103,16 @@
 
 : fg-color 2 b! !b ; ( n -- )
 : bg-color 3 b! !b ; ( n -- )
+: br-color 4 b! !b ; ( n -- )
 
-black fg-color
-white bg-color
+white fg-color
+blue bg-color
+green br-color
 
-: intro
-( ForthScript 0.1.0, Open Source (2024) by T. Szulc )
-70 emit 111 emit 114 emit 116 emit 104 emit 83 emit 99 emit 114 emit 105 emit
-112 emit 116 emit 32 emit 48 emit 46 emit 49 emit 46 emit 49 emit 44 emit 32
-emit 79 emit 112 emit 101 emit 110 emit 32 emit 83 emit 111 emit 117 emit 114
-emit 99 emit 101 emit 32 emit 40 emit 50 emit 48 emit 50 emit 52 emit 41 emit
-32 emit 98 emit 121 emit 32 emit 84 emit 46 emit 32 emit 83 emit 122 emit 117
-emit 108 emit 99 emit 10 emit
-; intro
-
-: colors
-( addr[2] )
+: colors?
+( foreground = addr[2] )
+( background = addr[3] )
+( border     = addr[4] )
 ( 0: black, 1: white, 2: red, 3: cyan, 4: violet, 5: green, 6: blue )
 ( 7: yellow, 8: orange, 9: brown, 10: light red, 11: dark grey, 12: gray )
 ( 13: light green, 14: light blue, 15: light grey )
@@ -123,24 +120,64 @@ emit 108 emit 99 emit 10 emit
 110 emit 100 emit 32 emit 61 emit 32 emit 97 emit 100 emit 100 emit 114 emit 91
 emit 50 emit 93 emit 10 emit 98 emit 97 emit 99 emit 107 emit 103 emit 114 emit
 111 emit 117 emit 110 emit 100 emit 32 emit 61 emit 32 emit 97 emit 100 emit
-100 emit 114 emit 91 emit 51 emit 93 emit 10 emit 48 emit 58 emit 32 emit 98
-emit 108 emit 97 emit 99 emit 107 emit 10 emit 49 emit 58 emit 32 emit 119 emit
-104 emit 105 emit 116 emit 101 emit 10 emit 50 emit 58 emit 32 emit 114 emit
-101 emit 100 emit 10 emit 51 emit 58 emit 32 emit 99 emit 121 emit 97 emit 110
-emit 10 emit 52 emit 58 emit 32 emit 118 emit 105 emit 111 emit 108 emit 101
-emit 116 emit 10 emit 53 emit 58 emit 32 emit 103 emit 114 emit 101 emit 101
-emit 110 emit 10 emit 54 emit 58 emit 32 emit 98 emit 108 emit 117 emit 101
-emit 10 emit 55 emit 58 emit 32 emit 121 emit 101 emit 108 emit 108 emit 111
-emit 119 emit 10 emit 56 emit 58 emit 32 emit 111 emit 114 emit 97 emit 110
-emit 103 emit 101 emit 10 emit 57 emit 58 emit 32 emit 98 emit 114 emit 111
-emit 119 emit 110 emit 10 emit 49 emit 48 emit 58 emit 32 emit 108 emit 105
-emit 103 emit 104 emit 116 emit 32 emit 114 emit 101 emit 100 emit 10 emit 49
-emit 49 emit 58 emit 32 emit 100 emit 97 emit 114 emit 107 emit 32 emit 103
-emit 114 emit 101 emit 121 emit 10 emit 49 emit 50 emit 58 emit 32 emit 103
-emit 114 emit 97 emit 121 emit 10 emit 49 emit 51 emit 58 emit 32 emit 108
-emit 105 emit 103 emit 104 emit 116 emit 32 emit 103 emit 114 emit 101 emit 101
-emit 110 emit 10 emit 49 emit 52 emit 58 emit 32 emit 108 emit 105 emit 103
-emit 104 emit 116 emit 32 emit 98 emit 108 emit 117 emit 101 emit 10 emit 49
-emit 53 emit 58 emit 32 emit 108 emit 105 emit 103 emit 104 emit 116 emit 32
-emit 103 emit 114 emit 101 emit 121 emit 32 emit
+100 emit 114 emit 91 emit 51 emit 93 emit 10 emit 98 emit 111 emit 114 emit 100
+emit 101 emit 114 emit 32 emit 32 emit 32 emit 32 emit 32 emit 61 emit 32 emit
+97 emit 100 emit 100 emit 114 emit 91 emit 52 emit 93 emit 10 emit 48 emit 58
+emit 32 emit 98 emit 108 emit 97 emit 99 emit 107 emit 10 emit 49 emit 58 emit
+32 emit 119 emit 104 emit 105 emit 116 emit 101 emit 10 emit 50 emit 58 emit 32
+emit 114 emit 101 emit 100 emit 10 emit 51 emit 58 emit 32 emit 99 emit 121
+emit 97 emit 110 emit 10 emit 52 emit 58 emit 32 emit 118 emit 105 emit 111
+emit 108 emit 101 emit 116 emit 10 emit 53 emit 58 emit 32 emit 103 emit 114
+emit 101 emit 101 emit 110 emit 10 emit 54 emit 58 emit 32 emit 98 emit 108
+emit 117 emit 101 emit 10 emit 55 emit 58 emit 32 emit 121 emit 101 emit 108
+emit 108 emit 111 emit 119 emit 10 emit 56 emit 58 emit 32 emit 111 emit 114
+emit 97 emit 110 emit 103 emit 101 emit 10 emit 57 emit 58 emit 32 emit 98 emit
+114 emit 111 emit 119 emit 110 emit 10 emit 49 emit 48 emit 58 emit 32 emit 108
+emit 105 emit 103 emit 104 emit 116 emit 32 emit 114 emit 101 emit 100 emit 10 
+emit 49 emit 49 emit 58 emit 32 emit 100 emit 97 emit 114 emit 107 emit 32 emit
+103 emit 114 emit 101 emit 121 emit 10 emit 49 emit 50 emit 58 emit 32 emit 103
+emit 114 emit 97 emit 121 emit 10 emit 49 emit 51 emit 58 emit 32 emit 108 emit
+105 emit 103 emit 104 emit 116 emit 32 emit 103 emit 114 emit 101 emit 101 emit
+110 emit 10 emit 49 emit 52 emit 58 emit 32 emit 108 emit 105 emit 103 emit 104
+emit 116 emit 32 emit 98 emit 108 emit 117 emit 101 emit 10 emit 49 emit 53
+emit 58 emit 32 emit 108 emit 105 emit 103 emit 104 emit 116 emit 32 emit 103
+emit 114 emit 101 emit 121 emit 32 emit
 ;
+
+: help
+( Please check the README.md for more information. )
+( There is a good chance everything is not well documented yet, )
+( so, apologies in advance. )
+80 emit 108 emit 101 emit 97 emit 115 emit 101 emit 32 emit 99 emit 104 emit
+101 emit 99 emit 107 emit 32 emit 116 emit 104 emit 101 emit 32 emit 82 emit 69
+emit 65 emit 68 emit 77 emit 69 emit 46 emit 109 emit 100 emit 32 emit 102 emit
+111 emit 114 emit 32 emit 109 emit 111 emit 114 emit 101 emit 32 emit 105 emit
+110 emit 102 emit 111 emit 114 emit 109 emit 97 emit 116 emit 105 emit 111 emit
+110 emit 46 emit 32 emit 84 emit 104 emit 101 emit 114 emit 101 emit 32 emit
+105 emit 115 emit 32 emit 97 emit 32 emit 103 emit 111 emit 111 emit 100 emit
+32 emit 99 emit 104 emit 97 emit 110 emit 99 emit 101 emit 32 emit 101 emit 118
+emit 101 emit 114 emit 121 emit 116 emit 104 emit 105 emit 110 emit 103 emit 32
+emit 105 emit 115 emit 32 emit 110 emit 111 emit 116 emit 32 emit 119 emit 101
+emit 108 emit 108 emit 32 emit 100 emit 111 emit 99 emit 117 emit 109 emit 101
+emit 110 emit 116 emit 101 emit 100 emit 32 emit 121 emit 101 emit 116 emit 44
+emit 32 emit 115 emit 111 emit 44 emit 32 emit 97 emit 112 emit 111 emit 108
+emit 111 emit 103 emit 105 emit 101 emit 115 emit 32 emit 105 emit 110 emit 32
+emit 97 emit 100 emit 118 emit 97 emit 110 emit 99 emit 101 emit 46 emit 
+;
+
+: intro
+( $$$$$$$$ FORTHSCRIPT 1.2 $$$$$$$$ )
+(    OPEN SOURCE 2024 BY T.SZULC    )
+10 emit
+32 emit 32 emit 32 emit 32 emit 32 emit 32 emit 32 emit 32 emit 32 emit 32 emit
+32 emit 32 emit 32 emit 32 emit 32 emit 36 emit 36 emit 36 emit 36 emit 36 emit
+36 emit 36 emit 36 emit 32 emit 70 emit 79 emit 82 emit 84 emit 72 emit 83 emit
+67 emit 82 emit 73 emit 80 emit 84 emit 32 emit 49 emit 46 emit 50 emit 32 emit
+36 emit 36 emit 36 emit 36 emit 36 emit 36 emit 36 emit 36 emit 10 emit 32 emit
+32 emit 32 emit 32 emit 32 emit 32 emit 32 emit 32 emit 32 emit 32 emit 32 emit
+32 emit 32 emit 32 emit 32 emit 32 emit 32 emit 32 emit 79 emit 80 emit 69 emit
+78 emit 32 emit 83 emit 79 emit 85 emit 82 emit 67 emit 69 emit 32 emit 50 emit
+48 emit 50 emit 52 emit 32 emit 66 emit 89 emit 32 emit 84 emit 46 emit 83 emit
+90 emit 85 emit 76 emit 67 emit 
+10 emit
+; intro
